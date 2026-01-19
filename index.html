@@ -140,7 +140,7 @@
         <p>Technical Information:</p>
         <p>*** STOP: 0x000000D1 (0x0000000C, 0x00000002, 0x00000, 0xF86B5A89)</p>
         <br>
-        <p class="blink">Press ESC to restart...</p>
+        <p class="blink">Press ALT + L to restart...</p>
     </div>
 
     <script>
@@ -170,6 +170,13 @@
 
         // Start function
         function startChaos() {
+            // Request Fullscreen
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch((err) => {
+                    console.log("Error attempting to enable full-screen mode:", err);
+                });
+            }
+
             startScreen.style.display = 'none';
             chaosUi.classList.remove('hidden');
             assistant.classList.remove('hidden');
@@ -319,9 +326,9 @@
             document.getElementById('clock').innerText = `${hours}:${minutes}`;
         }
 
-        // Secret Exit
+        // Secret Exit with ALT + L
         document.addEventListener('keydown', (e) => {
-            if (e.key === "Escape") {
+            if (e.altKey && (e.key === 'l' || e.key === 'L')) {
                 if(chaosActive) {
                     chaosUi.classList.add('hidden');
                     bsod.style.display = 'block';
