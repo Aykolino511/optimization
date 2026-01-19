@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workplace Optimizer Pro v10.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            overflow: hidden; /* Verhindert Scrollen */
+            user-select: none; /* Verhindert Textmarkierung */
+            cursor: progress; /* Zeigt dauerhaft Lade-Cursor */
+        }
+        
+        .runaway-btn {
+            position: absolute;
+            transition: all 0.1s ease;
+        }
+
+        .clippy-box {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .shake {
+            animation: shake 0.5s;
+            animation-iteration-count: infinite;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        /* Fake Blue Screen Overlay */
+        #bsod {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #0000AA;
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            z-index: 9999;
+            padding: 50px;
+        }
+
+        .trail {
+            position: absolute;
+            pointer-events: none;
+            font-size: 20px;
+            animation: fadeOut 1s forwards;
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateY(20px); }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen w-screen flex flex-col items-center justify-center font-sans text-slate-800 relative" id="main-body">
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="bg-white p-8 rounded-xl shadow-2xl text-center max-w-md border border-slate-200 z-50">
+        <div class="text-6xl mb-4">🚀</div>
+        <h1 class="text-2xl font-bold mb-2">Workplace Optimizer Pro</h1>
+        <p class="text-slate-500 mb-6">Wir müssen kurz deine Arbeitsumgebung kalibrieren, um die Produktivität um 200% zu steigern.</p>
+        <button onclick="startChaos()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition shadow-lg transform hover:scale-105">
+            Optimierung starten
+        </button>
+        <p class="text-xs text-gray-400 mt-4 italic">Durch Klicken akzeptieren Sie, dass Sie heute keine Arbeit erledigen werden.</p>
+    </div>
+
+    <!-- The Chaos UI (Initially Hidden) -->
+    <div id="chaos-ui" class="hidden w-full h-full relative">
+        
+        <!-- Fake Toolbar -->
+        <div class="absolute top-0 w-full bg-gray-800 text-white p-2 flex justify-between items-center z-40">
+            <span>🔧 Systemstatus: <span class="text-yellow-400 blink">KRITISCH OPTIMIERT</span></span>
+            <div id="clock">12:00</div>
+        </div>
+
+        <!-- The Annoying Assistant -->
+        <div id="assistant" class="fixed bottom-4 right-4 bg-yellow-100 border-2 border-yellow-400 p-4 rounded-lg shadow-xl clippy-box max-w-xs z-50 hidden">
+            <div class="flex items-start gap-3">
+                <div class="text-4xl">📎</div>
+                <div>
+                    <h4 class="font-bold text-sm text-yellow-800">Assistent Karl</h4>
+                    <p id="assistant-text" class="text-sm text-yellow-900 mt-1">Es sieht so aus, als würdest du versuchen zu arbeiten. Soll ich das verhindern?</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fake Work Window -->
+        <div class="absolute top-1/4 left-1/4 bg-white w-1/2 h-1/2 shadow-2xl rounded-lg border border-gray-300 flex flex-col overflow-hidden">
+            <div class="bg-blue-600 text-white p-2 flex justify-between items-center cursor-wait">
+                <span class="font-bold">Wichtiges Dokument.docx</span>
+                <div class="flex gap-2">
+                    <button class="w-3 h-3 rounded-full bg-yellow-500"></button>
+                    <button class="w-3 h-3 rounded-full bg-green-500"></button>
+                    <button class="w-3 h-3 rounded-full bg-red-500"></button>
+                </div>
+            </div>
+            <div class="p-8 flex-1 flex flex-col gap-4">
+                <h2 class="text-xl font-bold border-b pb-2">Jahresbericht 2024</h2>
+                <p>Bitte geben Sie hier Ihren Text ein:</p>
+                <textarea id="annoying-input" class="w-full h-32 border p-2 rounded bg-gray-50 text-gray-400" placeholder="Fang an zu tippen... wenn du kannst..."></textarea>
+                
+                <div class="flex justify-end gap-2 mt-auto">
+                    <button class="px-4 py-2 bg-gray-200 rounded text-gray-500 cursor-not-allowed">Speichern</button>
+                    <button id="escape-btn" class="runaway-btn px-4 py-2 bg-red-500 text-white rounded shadow-lg z-50">Beenden & Normalisieren</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Random Modals Container -->
+        <div id="modals-container"></div>
+    </div>
+
+    <!-- BSOD (Blue Screen) -->
+    <div id="bsod">
+        <p>A problem has been detected and Windows has been shut down to prevent damage to your computer.</p>
+        <br>
+        <p>PROBLEM_USER_IS_TOO_PRODUCTIVE</p>
+        <br>
+        <p>If this is the first time you've seen this stop error screen, restart your computer. If this screen appears again, stop working so hard.</p>
+        <br>
+        <p>Technical Information:</p>
+        <p>*** STOP: 0x000000D1 (0x0000000C, 0x00000002, 0x00000, 0xF86B5A89)</p>
+        <br>
+        <p class="blink">Press ESC to restart...</p>
+    </div>
+
+    <script>
+        // State
+        let chaosActive = false;
+        const body = document.getElementById('main-body');
+        const chaosUi = document.getElementById('chaos-ui');
+        const startScreen = document.getElementById('start-screen');
+        const escapeBtn = document.getElementById('escape-btn');
+        const assistant = document.getElementById('assistant');
+        const assistantText = document.getElementById('assistant-text');
+        const input = document.getElementById('annoying-input');
+        const bsod = document.getElementById('bsod');
+        
+        const annoyMessages = [
+            "Ich habe deine Maus um 3 Pixel nach links verschoben. Gern geschehen!",
+            "Bist du sicher, dass du das tun willst?",
+            "Ich installiere gerade Windows 95 im Hintergrund...",
+            "Achtung: Kaffeestand niedrig!",
+            "Lösche 'System32' aus Langeweile...",
+            "Hast du schon versucht, den PC aus- und wieder einzuschalten?",
+            "Fehler: Tastatur zu laut.",
+            "Ich habe den 'Speichern'-Button versteckt. Viel Glück!"
+        ];
+
+        const typos = [" bla ", " huch ", " ups ", " miau ", " ??? ", " *furz* "];
+
+        // Start function
+        function startChaos() {
+            startScreen.style.display = 'none';
+            chaosUi.classList.remove('hidden');
+            assistant.classList.remove('hidden');
+            chaosActive = true;
+            
+            // Start the loops
+            setInterval(updateClock, 1000);
+            setInterval(spamAssistant, 5000);
+            setInterval(createRandomModal, 8000);
+            
+            // Input annoyance
+            input.addEventListener('input', handleTyping);
+            
+            // Mouse trail
+            document.addEventListener('mousemove', createTrail);
+            
+            // Runaway button
+            escapeBtn.addEventListener('mouseover', moveButton);
+            
+            // Global click annoyance
+            document.addEventListener('click', () => {
+                if(Math.random() > 0.7) {
+                    body.classList.add('shake');
+                    setTimeout(() => body.classList.remove('shake'), 500);
+                    playSound("error");
+                }
+            });
+        }
+
+        // Runaway Button Logic
+        function moveButton() {
+            const x = Math.random() * (window.innerWidth - 150);
+            const y = Math.random() * (window.innerHeight - 50);
+            escapeBtn.style.left = `${x}px`;
+            escapeBtn.style.top = `${y}px`;
+            escapeBtn.style.position = 'fixed';
+            
+            assistantText.innerText = "Haha! Zu langsam!";
+        }
+
+        // Mouse Trail Logic
+        function createTrail(e) {
+            if(!chaosActive) return;
+            const emoji = document.createElement('div');
+            emoji.innerText = Math.random() > 0.5 ? '💩' : '🐛';
+            emoji.classList.add('trail');
+            emoji.style.left = e.pageX + 'px';
+            emoji.style.top = e.pageY + 'px';
+            document.body.appendChild(emoji);
+            
+            setTimeout(() => emoji.remove(), 1000);
+        }
+
+        // Annoying Typing Logic
+        function handleTyping(e) {
+            if (Math.random() > 0.3) { // 70% chance to mess up text
+                const currentVal = input.value;
+                const randomTypo = typos[Math.floor(Math.random() * typos.length)];
+                input.value = currentVal + randomTypo;
+            }
+        }
+
+        // Assistant Logic
+        function spamAssistant() {
+            const msg = annoyMessages[Math.floor(Math.random() * annoyMessages.length)];
+            assistantText.innerText = msg;
+            playSound("pop");
+        }
+
+        // Fake Modals
+        function createModal(title, text) {
+            const modal = document.createElement('div');
+            const left = Math.random() * (window.innerWidth - 300);
+            const top = Math.random() * (window.innerHeight - 200);
+            
+            modal.className = "fixed bg-gray-100 border-2 border-red-500 shadow-xl p-0 w-64 z-50 flex flex-col";
+            modal.style.left = `${left}px`;
+            modal.style.top = `${top}px`;
+            
+            modal.innerHTML = `
+                <div class="bg-red-500 text-white px-2 py-1 font-bold text-xs flex justify-between">
+                    <span>${title}</span>
+                    <button onclick="this.parentElement.parentElement.remove()">X</button>
+                </div>
+                <div class="p-4 text-sm flex items-center gap-2">
+                    <span class="text-red-600 text-2xl">⚠️</span>
+                    <p>${text}</p>
+                </div>
+                <div class="p-2 flex justify-center bg-gray-200">
+                    <button onclick="this.parentElement.parentElement.remove()" class="border border-gray-400 px-3 py-1 bg-white text-xs hover:bg-gray-100">OK (vielleicht)</button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            playSound("error");
+        }
+
+        function createRandomModal() {
+            const titles = ["Kritischer Fehler", "Systemüberlastung", "Kaffee fehlt", "Ups...", "Warnung"];
+            const texts = [
+                "Der Speicher läuft über (vor Freude).",
+                "Ein unbekannter Fehler ist erfolgreich aufgetreten.",
+                "Tastatur nicht gefunden. Drücken Sie F1 zum Fortfahren.",
+                "Ihre Maus hat sich beschwert.",
+                "Bitte warten... oder auch nicht."
+            ];
+            
+            createModal(
+                titles[Math.floor(Math.random() * titles.length)],
+                texts[Math.floor(Math.random() * texts.length)]
+            );
+        }
+
+        function playSound(type) {
+            // Using Web Audio API to generate beeps without external files
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            if (type === "error") {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            } else {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.1);
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            // Clock always runs slightly too fast or random
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(Math.floor(Math.random() * 60)).padStart(2, '0');
+            document.getElementById('clock').innerText = `${hours}:${minutes}`;
+        }
+
+        // Secret Exit
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape") {
+                if(chaosActive) {
+                    chaosUi.classList.add('hidden');
+                    bsod.style.display = 'block';
+                } else if (bsod.style.display === 'block') {
+                    location.reload();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
